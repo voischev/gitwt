@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { lstat, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { expandPath, hooksSchema, loadConfig } from "./config.js";
+import { expandPath, loadConfig, validateHooks } from "./config.js";
 import { runHooks } from "./environment.js";
 import { GitwtError, git } from "./process.js";
 
@@ -141,7 +141,7 @@ async function hookFile(cwd) {
 
 async function readHooks(cwd) {
   try {
-    return hooksSchema.parse(JSON.parse(await readFile(await hookFile(cwd), "utf8")));
+    return validateHooks(JSON.parse(await readFile(await hookFile(cwd), "utf8")));
   } catch (error) {
     if (error.code === "ENOENT") return null;
     throw new GitwtError("invalid_hooks", `Не удалось прочитать снимок хуков: ${error.message}`);

@@ -2,28 +2,29 @@ import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { parse } from "jsonc-parser";
-import { z } from "zod";
 import { GitwtError } from "./process.js";
 
-const command = z.union([z.string().min(1), z.tuple([z.string().min(1)]).rest(z.string())]);
-export const hooksSchema = z
-  .object({
-    postCreate: z.array(command).default([]),
-    preRemove: z.array(command).default([]),
-  })
-  .strict();
-const schema = z
-  .object({
-    remote: z
-      .string()
-      .regex(/^[a-zA-Z0-9_][a-zA-Z0-9._-]*$/)
-      .default("origin"),
-    base: z.string().min(1).default("auto"),
-    prefix: z.string().default(""),
-    worktreeDir: z.string().min(1).optional(),
-    hooks: hooksSchema.default({ postCreate: [], preRemove: [] }),
-  })
-  .strict();
+function assertObject(value, field) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new GitwtError("invalid_config", `${field}: ожидается объект`);
+  }
+}
+
+export function validateHooks(value) {
+  assertObject(value, "hooks");
+  for (const [key, commands] of Object.entries(value)) {
+    if (!["postCreate", "preRemove"].includes(key) || !Array.isArray(commands)) {
+      throw new GitwtError("invalid_config", `hooks.${key}: ожидается список команд`);
+    }
+    for (const command of commands) {
+      const args = Array.isArray(command) ? command : [command];
+      if (!args.length || args.some((part) => typeof part !== "string") || !args[0].length) {
+        throw new GitwtError("invalid_config", `hooks.${key}: некорректная команда`);
+      }
+    }
+  }
+  return { postCreate: [], preRemove: [], ...value };
+}
 
 export function expandPath(value, home = os.homedir(), base = process.cwd()) {
   if (value === "~") return home;
@@ -48,22 +49,29 @@ async function readConfig(file) {
 }
 
 export async function loadConfig(root, overrides = {}, home = os.homedir()) {
-  const config = { hooks: {} };
+  assertObject(overrides, "config");
+  const config = { remote: "origin", base: "auto", prefix: "", hooks: {} };
   for (const value of [
     await readConfig(path.join(home, ".config/gitwt/config.jsonc")),
     await readConfig(path.join(root, ".gitwt.jsonc")),
     Object.fromEntries(Object.entries(overrides).filter(([, value]) => value !== undefined)),
   ]) {
-    const checked = schema.partial().safeParse(value);
-    if (!checked.success)
-      throw new GitwtError(
-        "invalid_config",
-        `Некорректные настройки: ${checked.error.issues.map((issue) => issue.path.join(".") || "неизвестное поле").join(", ")}`,
-      );
+    for (const [key, setting] of Object.entries(value)) {
+      if (key === "hooks") {
+        validateHooks(setting);
+      } else if (
+        !["remote", "base", "prefix", "worktreeDir"].includes(key) ||
+        typeof setting !== "string" ||
+        (key !== "prefix" && !setting.length) ||
+        (key === "remote" && !/^[a-zA-Z0-9_][a-zA-Z0-9._-]*$/.test(setting))
+      ) {
+        throw new GitwtError("invalid_config", `Некорректная настройка: ${key}`);
+      }
+    }
     const hooks = { ...config.hooks, ...value.hooks };
     Object.assign(config, value, { hooks });
   }
-  const resolved = schema.parse(config);
-  if (resolved.worktreeDir) resolved.worktreeDir = expandPath(resolved.worktreeDir, home, root);
-  return resolved;
+  config.hooks = validateHooks(config.hooks);
+  if (config.worktreeDir) config.worktreeDir = expandPath(config.worktreeDir, home, root);
+  return config;
 }
