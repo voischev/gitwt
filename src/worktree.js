@@ -183,7 +183,7 @@ export async function createWorktree(cwd, options = {}) {
   const target = options.path
     ? expandPath(options.path, home, repo.root)
     : path.join(
-        config.worktreeDir ?? path.join(home, "git-wt"),
+        config.worktreeDir ?? path.join(home, "gitwt"),
         `${path.basename(primary)}-${id}`,
         branch,
       );

@@ -14,7 +14,7 @@ import {
   resolveWorktree,
 } from "../src/index.js";
 
-const bin = fileURLToPath(new URL("../bin/git-wt.js", import.meta.url));
+const bin = fileURLToPath(new URL("../bin/gitwt.js", import.meta.url));
 const identity = {
   ...process.env,
   GIT_AUTHOR_NAME: "Тест",

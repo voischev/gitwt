@@ -13,11 +13,11 @@ Requires Node.js 22.14+ and Git.
 
 ## Agent workflow
 
-1. Run `git-wt add <branch> --base <remote-branch> --json`.
+1. Run `gitwt add <branch> --base <remote-branch> --json`.
 2. Read `data.worktreePath` and work there.
 3. On success with warnings, keep the worktree and check `data.warnings`.
-4. Use `git-wt list --status --json` to inspect live state.
-5. Remove explicitly with `git-wt remove <branch> --json`.
+4. Use `gitwt list --status --json` to inspect live state.
+5. Remove explicitly with `gitwt remove <branch> --json`.
 
 For parallel agents, use one worktree per agent.
 
@@ -26,10 +26,10 @@ For parallel agents, use one worktree per agent.
 Human-readable by default:
 
 ```sh
-git-wt add feature/login --base main
-git-wt list --status
-git-wt cd feature/login
-git-wt remove feature/login
+gitwt add feature/login --base main
+gitwt list --status
+gitwt cd feature/login
+gitwt remove feature/login
 ```
 
 `add` creates a branch from a freshly fetched remote base and verifies the
@@ -83,7 +83,7 @@ Project settings live in `.gitwt.jsonc`; global defaults live in
   "remote": "origin",
   "base": "auto",
   "prefix": "",
-  "worktreeDir": "~/git-wt",
+  "worktreeDir": "~/gitwt",
   "hooks": { "postCreate": [["npm", "ci"]], "preRemove": ["git status --short"] }
 }
 ```

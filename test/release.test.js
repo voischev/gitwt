@@ -22,7 +22,7 @@ const REPO_ROOT = join(import.meta.dirname, "..");
 const PACKAGE = JSON.parse(await readFile(join(REPO_ROOT, "package.json"), "utf8"));
 const SHA = "a".repeat(40);
 const TARBALL_NAME = `${PACKAGE.name}-${PACKAGE.version}.tgz`;
-const PACK_FILES = [{ path: "package.json" }, { path: "src/index.js" }, { path: "bin/git-wt.js" }];
+const PACK_FILES = [{ path: "package.json" }, { path: "src/index.js" }, { path: "bin/gitwt.js" }];
 const FETCH_MAIN = ["fetch", "--no-tags", "origin", "main:refs/remotes/origin/main"];
 
 function createRunner({
@@ -216,9 +216,9 @@ describe("точки входа и секреты в пакете", () => {
     const pkg = {
       main: "./src/index.js",
       exports: { ".": "./src/index.js", "./server": "./src/index.js" },
-      bin: { "git-wt": "./bin/git-wt.js" },
+      bin: { gitwt: "./bin/gitwt.js" },
     };
-    assert.deepEqual(collectEntryPoints(pkg).sort(), ["bin/git-wt.js", "src/index.js"]);
+    assert.deepEqual(collectEntryPoints(pkg).sort(), ["bin/gitwt.js", "src/index.js"]);
   });
 
   it("отсутствующая точка входа в упаковке отклоняется", () => {
