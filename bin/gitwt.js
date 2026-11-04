@@ -12,12 +12,12 @@ import {
 } from "../src/index.js";
 
 const usage = [
-  "git-wt add <ветка> [--base <remote-ветка> | --from <ref>] [--path <путь> | --dir <каталог>] [--no-hooks] [--json]",
-  "git-wt list [--status] [--json | --porcelain]",
-  "git-wt cd <ветка|путь>",
-  "git-wt hooks <ветка|путь>",
-  "git-wt remove <ветка|путь> [--force] [--keep-branch]",
-  "git-wt config",
+  "gitwt add <ветка> [--base <remote-ветка> | --from <ref>] [--path <путь> | --dir <каталог>] [--no-hooks] [--json]",
+  "gitwt list [--status] [--json | --porcelain]",
+  "gitwt cd <ветка|путь>",
+  "gitwt hooks <ветка|путь>",
+  "gitwt remove <ветка|путь> [--force] [--keep-branch]",
+  "gitwt config",
 ].join("\n");
 const machine = process.argv.includes("--json") || process.argv.includes("--porcelain");
 let currentCommand = null;
