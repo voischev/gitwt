@@ -70,7 +70,7 @@ await removeWorktree(process.cwd(), "feature/login");
 
 `listWorktrees` always includes `dirty`, `ahead`, and `behind`. They are `null`
 when live status was not requested or an upstream comparison is unavailable;
-`dirty` is a boolean after `status: true`.
+a successful live check sets `dirty` to a boolean.
 
 ## Configuration
 
@@ -91,6 +91,11 @@ Project settings live in `.gitwt.jsonc`; global defaults live in
 after creation or before removal. Each worktree keeps its own
 `gitwt-hooks.json` snapshot, so later configuration changes do not affect an
 existing checkout.
+
+## Integrations
+
+`opencode-gitwt` exposes gitwt as tools inside OpenCode conversations:
+https://github.com/voischev/opencode-gitwt
 
 ## Development and releases
 
