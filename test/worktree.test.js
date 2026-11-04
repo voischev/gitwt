@@ -126,6 +126,37 @@ test("конфиг объединяет global/project/аргументы и с�
   await assert.rejects(loadConfig(f.repo, {}, f.home), { code: "invalid_config" });
 });
 
+test("конфиг сохраняет JSONC и отклоняет неверные поля до Git-операций", async (t) => {
+  const f = await fixture(t);
+  await writeFile(
+    path.join(f.repo, ".gitwt.jsonc"),
+    '{ // Настройки проекта\n"prefix":"", "hooks":{"postCreate":[["node","-e",""]],},}',
+  );
+  const config = await loadConfig(f.repo, {}, f.home);
+  assert.equal(config.remote, "origin");
+  assert.equal(config.base, "auto");
+  assert.deepEqual(config.hooks, { postCreate: [["node", "-e", ""]], preRemove: [] });
+  for (const invalid of [
+    { remote: "--upload-pack" },
+    { base: "" },
+    { worktreeDir: 42 },
+    { unknown: true },
+    { hooks: null },
+    { hooks: [] },
+    { hooks: { unknown: [] } },
+    { hooks: { postCreate: "true" } },
+    { hooks: { preRemove: [[]] } },
+    { hooks: { preRemove: [["node", 1]] } },
+    { hooks: { preRemove: [""] } },
+  ]) {
+    await assert.rejects(
+      createWorktree(f.repo, { branch: "invalid", from: "HEAD", home: f.home, config: invalid }),
+      { code: "invalid_config" },
+    );
+  }
+  assert.equal((await listWorktrees(f.repo)).length, 1);
+});
+
 test("занятый путь не перезаписывается, пробелы и кавычки в новом пути сохраняются", async (t) => {
   const f = await fixture(t);
   const target = path.join(f.root, 'my "copy"');
