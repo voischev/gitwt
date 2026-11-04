@@ -8,7 +8,8 @@ Requires Node.js 22.14+ and Git.
 
 ## Install
 
-`npm install -g gitwt` installs the CLI; `npm install gitwt` adds the library.
+`npm install -g @voischev/gitwt` installs the CLI;
+`npm install @voischev/gitwt` adds the library.
 
 ## Agent workflow
 
@@ -57,7 +58,7 @@ stay in `data`. In human mode warnings go to stderr. Never parse human logs.
 ## JavaScript API
 
 ```js
-import { createWorktree, listWorktrees, removeWorktree } from "gitwt";
+import { createWorktree, listWorktrees, removeWorktree } from "@voischev/gitwt";
 
 const created = await createWorktree(process.cwd(), {
   branch: "feature/login",
