@@ -4,7 +4,7 @@ Agent-ready CLI + Node API for Git worktrees. Create an isolated checkout for
 each task or agent, inspect it, and remove it explicitly. gitwt manages
 worktrees only; it does not orchestrate agents.
 
-Requires Node.js 22.14+ and Git.
+Requires Node.js 22.14+ and Git. No runtime dependencies.
 
 ## Install
 
@@ -75,8 +75,9 @@ a successful live check sets `dirty` to a boolean.
 
 ## Configuration
 
-Project settings live in `.gitwt.jsonc`; global defaults live in
-`~/.config/gitwt/config.jsonc`.
+Project settings live in `.gitwt.json`; global defaults live in
+`~/.config/gitwt/config.json`. Use plain JSON. To migrate, rename `.jsonc` files
+to `.json` and remove comments and trailing commas.
 
 ```json
 {
@@ -97,10 +98,3 @@ existing checkout.
 
 `opencode-gitwt` exposes gitwt as tools inside OpenCode conversations:
 https://github.com/voischev/opencode-gitwt
-
-## Development and releases
-
-Run `npm ci --ignore-scripts`, `npm run check`, and `npm test`.
-GitHub is the source of truth; pushes are mirrored to SourceCraft. Version tags
-publish through GitHub Actions using `NPM_TOKEN`; mirroring uses
-`SOURCECRAFT_TOKEN`.
