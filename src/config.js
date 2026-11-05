@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { parse } from "jsonc-parser";
 import { GitwtError } from "./process.js";
 
 function assertObject(value, field) {
@@ -36,11 +35,8 @@ export function expandPath(value, home = os.homedir(), base = process.cwd()) {
 
 async function readConfig(file) {
   try {
-    const errors = [];
-    const value = parse(await readFile(file, "utf8"), errors, { allowTrailingComma: true });
-    if (errors.length || !value || typeof value !== "object" || Array.isArray(value)) {
-      throw new Error("Ожидается объект JSONC");
-    }
+    const value = JSON.parse(await readFile(file, "utf8"));
+    assertObject(value, file);
     return value;
   } catch (error) {
     if (error.code === "ENOENT") return {};
@@ -52,8 +48,8 @@ export async function loadConfig(root, overrides = {}, home = os.homedir()) {
   assertObject(overrides, "config");
   const config = { remote: "origin", base: "auto", prefix: "", hooks: {} };
   for (const value of [
-    await readConfig(path.join(home, ".config/gitwt/config.jsonc")),
-    await readConfig(path.join(root, ".gitwt.jsonc")),
+    await readConfig(path.join(home, ".config/gitwt/config.json")),
+    await readConfig(path.join(root, ".gitwt.json")),
     Object.fromEntries(Object.entries(overrides).filter(([, value]) => value !== undefined)),
   ]) {
     for (const [key, setting] of Object.entries(value)) {

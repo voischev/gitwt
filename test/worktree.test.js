@@ -111,26 +111,26 @@ test("конфиг объединяет global/project/аргументы и с�
   const f = await fixture(t);
   await mkdir(path.join(f.home, ".config/gitwt"), { recursive: true });
   await writeFile(
-    path.join(f.home, ".config/gitwt/config.jsonc"),
+    path.join(f.home, ".config/gitwt/config.json"),
     '{"prefix":"global/","hooks":{"postCreate":["true"]}}',
   );
   await writeFile(
-    path.join(f.repo, ".gitwt.jsonc"),
+    path.join(f.repo, ".gitwt.json"),
     '{"prefix":"project/","hooks":{"preRemove":["true"]}}',
   );
   const config = await loadConfig(f.repo, { prefix: "cli/", worktreeDir: "~/copies" }, f.home);
   assert.equal(config.prefix, "cli/");
   assert.equal(config.worktreeDir, path.join(f.home, "copies"));
   assert.deepEqual(config.hooks, { postCreate: ["true"], preRemove: ["true"] });
-  await writeFile(path.join(f.repo, ".gitwt.jsonc"), '{"base":}');
+  await writeFile(path.join(f.repo, ".gitwt.json"), '{"base":}');
   await assert.rejects(loadConfig(f.repo, {}, f.home), { code: "invalid_config" });
 });
 
-test("конфиг сохраняет JSONC и отклоняет неверные поля до Git-операций", async (t) => {
+test("конфиг читает обычный JSON и отклоняет неверные поля до Git-операций", async (t) => {
   const f = await fixture(t);
   await writeFile(
-    path.join(f.repo, ".gitwt.jsonc"),
-    '{ // Настройки проекта\n"prefix":"", "hooks":{"postCreate":[["node","-e",""]],},}',
+    path.join(f.repo, ".gitwt.json"),
+    '{"prefix":"", "hooks":{"postCreate":[["node","-e",""]]}}',
   );
   const config = await loadConfig(f.repo, {}, f.home);
   assert.equal(config.remote, "origin");
@@ -151,6 +151,18 @@ test("конфиг сохраняет JSONC и отклоняет неверны
   ]) {
     await assert.rejects(
       createWorktree(f.repo, { branch: "invalid", from: "HEAD", home: f.home, config: invalid }),
+      { code: "invalid_config" },
+    );
+  }
+  assert.equal((await listWorktrees(f.repo)).length, 1);
+});
+
+test("комментарии, лишние запятые и не-объекты JSON отклоняются до создания worktree", async (t) => {
+  const f = await fixture(t);
+  for (const text of ['{ // Комментарий\n"base":"main"}', '{"base":"main",}', "null", "[]"]) {
+    await writeFile(path.join(f.repo, ".gitwt.json"), text);
+    await assert.rejects(
+      createWorktree(f.repo, { branch: "invalid-json", from: "HEAD", home: f.home }),
       { code: "invalid_config" },
     );
   }
@@ -201,7 +213,7 @@ test("хуки получают окружение, а preRemove сохраня�
     head: created.head,
     source: f.repo,
   });
-  await writeFile(path.join(f.repo, ".gitwt.jsonc"), '{"hooks":{"preRemove":["exit 9"]}}');
+  await writeFile(path.join(f.repo, ".gitwt.json"), '{"hooks":{"preRemove":["exit 9"]}}');
   await removeWorktree(f.repo, "hooks");
   assert.equal(await readFile(removed, "utf8"), "Сохранённый хук");
 });
@@ -301,7 +313,7 @@ test("ошибки checkout и повреждённые снимки не при
 test("CLI --json отдаёт единый envelope и не смешивает stdout хука с JSON", async (t) => {
   const f = await fixture(t);
   await writeFile(
-    path.join(f.repo, ".gitwt.jsonc"),
+    path.join(f.repo, ".gitwt.json"),
     JSON.stringify({
       hooks: {
         postCreate: [command('process.stdout.write("Вывод хука\\n"); process.exit(9)')],
@@ -341,7 +353,7 @@ test("CLI --json отдаёт единый envelope и не смешивает s
 test("CLI human add/list/remove показывает реальные ветку и путь, warnings идут в stderr", async (t) => {
   const f = await fixture(t);
   await writeFile(
-    path.join(f.repo, ".gitwt.jsonc"),
+    path.join(f.repo, ".gitwt.json"),
     JSON.stringify({ hooks: { postCreate: [command("process.exit(9)")] } }),
   );
   const target = path.join(f.root, "Human worktree");
