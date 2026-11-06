@@ -1,6 +1,6 @@
 {
   "name": "@voischev/gitwt",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Agent-independent Git worktree manager with a CLI and Node.js API",
   "type": "module",
   "main": "./src/index.js",

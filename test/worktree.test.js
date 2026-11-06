@@ -408,6 +408,33 @@ test("CLI нормализует ошибки аргументов в machine en
   assert.equal(missingEnvelope.error.code, "missing_argument");
 });
 
+test("CLI отклоняет конфликтующие и неподходящие флаги до изменения репозитория", async (t) => {
+  const f = await fixture(t);
+  const env = { ...identity, HOME: f.home };
+  const target = path.join(f.root, "new-copy");
+  const before = git(["show-ref"], f.repo);
+  for (const args of [
+    ["add", "task", "--base", "main", "--from", "HEAD"],
+    ["add", "task", "--path", target, "--dir", f.root],
+    ["add", "task", "--from", "HEAD", "--force"],
+    ["list", "--path", target],
+    ["cd", "main", "--status"],
+    ["remove", "main", "--base", "main"],
+    ["config", "--from", "HEAD"],
+    ["--skill", "--force"],
+  ]) {
+    const result = cli([...args, "--json"], f.repo, env);
+    assert.equal(result.status, 1, args.join(" "));
+    assert.equal(result.stdout, "");
+    const error = JSON.parse(result.stderr);
+    assert.equal(error.ok, false);
+    assert.equal(error.error.code, "invalid_arguments");
+  }
+  assert.equal(git(["show-ref"], f.repo), before);
+  assert.equal((await listWorktrees(f.repo)).length, 1);
+  assert.equal((await readdir(f.root)).includes("new-copy"), false);
+});
+
 test("--skill печатает инструкцию вне Git без команд, чтения конфигов и записи файлов", async (t) => {
   const parent = path.join(os.tmpdir(), "gitwt");
   await mkdir(parent, { recursive: true });

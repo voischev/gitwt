@@ -110,20 +110,8 @@ async function main() {
   }
   const { values, positionals } = parsed;
   const [command, target, ...extra] = positionals;
-  currentCommand = command ?? null;
-  if (values.skill) {
-    currentCommand = "skill";
-    if (positionals.length) {
-      throw new GitwtError("invalid_arguments", "Используйте --skill без команды");
-    }
-    process.stdout.write(
-      machine
-        ? `${JSON.stringify({ ok: true, command: "skill", data: { prompt: skill } })}\n`
-        : `${skill}\n`,
-    );
-    return;
-  }
-  if (!command || values.help) {
+  currentCommand = values.skill ? "skill" : (command ?? null);
+  if ((!command && !values.skill) || values.help) {
     if (machine) {
       process.stdout.write(`${JSON.stringify({ ok: true, command: "help", data: { usage } })}\n`);
     } else {
@@ -131,17 +119,55 @@ async function main() {
     }
     return;
   }
-  if (!["add", "list", "cd", "hooks", "remove", "config"].includes(command)) {
+  const allowed = {
+    add: ["base", "from", "path", "dir", "remote", "prefix", "no-hooks"],
+    list: ["status"],
+    cd: [],
+    hooks: [],
+    remove: ["force", "keep-branch"],
+    config: ["base", "dir", "remote", "prefix"],
+    skill: [],
+  };
+  if (!Object.hasOwn(allowed, currentCommand) || (command === "skill" && !values.skill)) {
     throw new GitwtError("invalid_command", `Неизвестная команда: ${command}`);
+  }
+  for (const option of Object.keys(values)) {
+    if (
+      !["json", "porcelain", "help", "skill"].includes(option) &&
+      !allowed[currentCommand].includes(option)
+    ) {
+      throw new GitwtError(
+        "invalid_arguments",
+        `Параметр --${option} недопустим для ${currentCommand}`,
+      );
+    }
+  }
+  for (const [first, second] of [
+    ["base", "from"],
+    ["path", "dir"],
+  ]) {
+    if (values[first] !== undefined && values[second] !== undefined) {
+      throw new GitwtError(
+        "invalid_arguments",
+        `Нельзя одновременно использовать --${first} и --${second}`,
+      );
+    }
+  }
+  if (values.skill) {
+    if (positionals.length)
+      throw new GitwtError("invalid_arguments", "Используйте --skill без команды");
+    process.stdout.write(
+      machine
+        ? `${JSON.stringify({ ok: true, command: "skill", data: { prompt: skill } })}\n`
+        : `${skill}\n`,
+    );
+    return;
   }
   if (extra.length || (!["add", "cd", "remove", "hooks"].includes(command) && target)) {
     throw new GitwtError("invalid_arguments", "Лишние позиционные аргументы");
   }
   if (["add", "cd", "remove", "hooks"].includes(command) && !target) {
     throw new GitwtError("missing_argument", `Укажите ветку или путь для ${command}`);
-  }
-  if (values["no-hooks"] && command !== "add") {
-    throw new GitwtError("invalid_arguments", "--no-hooks допустим только при создании worktree");
   }
   const cwd = process.cwd();
   const config = {

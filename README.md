@@ -51,6 +51,8 @@ gitwt remove feature/login
 `add` creates a branch from a freshly fetched remote base and verifies the
 checkout. Use `--from <ref>` for a local ref or commit, `--path` for an exact
 destination, `--dir` for a base directory, and `--no-hooks` to disable hooks.
+Choose either `--base` or `--from`, and either `--path` or `--dir`.
+Options that do not apply to the selected command are rejected.
 `cd` prints only the worktree path for shell use. `list` marks the current
 worktree with `*`.
 
