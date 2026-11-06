@@ -13,6 +13,12 @@ Requires Node.js 22.14+ and Git. No runtime dependencies.
 
 ## Agent workflow
 
+Run `gitwt --skill` to print a ready-to-paste prompt for Codex, Claude Code, or
+another agent with terminal access. Paste it into the client's instructions or
+ask the agent to run `gitwt --skill` and follow the output. It only prints text;
+it does not configure the client or change files. `--skill --json` returns the
+prompt in `data.prompt`.
+
 1. Run `gitwt add <branch> --base <remote-branch> --json`.
 2. Read `data.worktreePath` and work there.
 3. On success with warnings, keep the worktree and check `data.warnings`.
