@@ -11,13 +11,23 @@ Requires Node.js 22.14+ and Git. No runtime dependencies.
 `npm install -g @voischev/gitwt` installs the CLI;
 `npm install @voischev/gitwt` adds the library.
 
-## Agent workflow
+## Agent skill
 
-Run `gitwt --skill` to print a ready-to-paste prompt for Codex, Claude Code, or
-another agent with terminal access. Paste it into the client's instructions or
-ask the agent to run `gitwt --skill` and follow the output. It only prints text;
-it does not configure the client or change files. `--skill --json` returns the
-prompt in `data.prompt`.
+**Built for coding agents:** give Codex, Claude Code, or another terminal-enabled
+agent the bundled worktree instructions:
+
+```sh
+gitwt --skill
+```
+
+Paste the output into your client's instructions, or ask the agent:
+
+> Run `gitwt --skill` and follow its instructions for this task.
+
+The command only prints a prompt; it does not change files or configure the
+client. `gitwt --skill --json` returns the text in `data.prompt`.
+
+## Agent workflow
 
 1. Run `gitwt add <branch> --base <remote-branch> --json`.
 2. Read `data.worktreePath` and work there.
