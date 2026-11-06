@@ -17,7 +17,25 @@ const usage = [
   "gitwt cd|hooks <branch|path>",
   "gitwt remove <branch|path> [--force] [--keep-branch]",
   "gitwt config",
+  "gitwt --skill",
   "Options: --json, --path <path>, --dir <dir>, --remote <name>, --prefix <prefix>, --no-hooks",
+].join("\n");
+const skill = [
+  "# Git worktrees with gitwt",
+  "",
+  "Use gitwt when a task needs an isolated Git checkout or parallel work. Use one worktree and a unique branch per task or agent.",
+  "The CLI is installed with `npm install -g @voischev/gitwt`. Run `gitwt --help` for options.",
+  "",
+  "1. From the repository, inspect existing copies with `gitwt list --status --json`. Coordinate before reusing another agent's worktree.",
+  "2. Create a new branch: `gitwt add <branch> --base <remote-branch> --json`. Choose the intended base; use `--from <verified-ref-or-commit>` for a local starting point instead.",
+  "3. Read `data.worktreePath`, `data.branch`, and `data.head`. Check `data.warnings` before continuing: a failed setup hook leaves the worktree in place.",
+  "4. Read the checkout's AGENTS.md and project instructions. Use worktreePath as cwd for every command and absolute paths inside it for file operations. Keep the current conversation.",
+  "5. Resume with `gitwt cd <branch-or-path> --json`; this returns a path, it does not change your shell or session directory. Inspect live state with `gitwt list --status --json`.",
+  "6. Keep worktrees when pausing or handing off. Remove only when explicitly requested and no longer in use: `gitwt remove <branch-or-path> --json`. Use `--keep-branch` to preserve the branch. Use `--force` only with explicit permission to discard local changes; it does not bypass a failing preRemove hook.",
+  "",
+  "Machine output: stdout contains one JSON object `{ok:true,command,data}`. Failures exit nonzero and write `{ok:false,command,error:{code,message,details}}` to stderr. Never parse human logs. A null status means unknown, not clean or zero.",
+  "A failed creation may leave a worktree: inspect the reported path before retrying. Do not automatically reset, delete, commit, or push. A clean or merged branch does not prove another agent is finished.",
+  "Project configuration: `.gitwt.json`; global defaults: `~/.config/gitwt/config.json`. Hooks are optional and saved per worktree; use `--no-hooks` at creation only when intentionally disabling them.",
 ].join("\n");
 const machine = process.argv.includes("--json") || process.argv.includes("--porcelain");
 let currentCommand = null;
@@ -84,6 +102,7 @@ async function main() {
         force: { type: "boolean" },
         "keep-branch": { type: "boolean" },
         help: { type: "boolean", short: "h" },
+        skill: { type: "boolean" },
       },
     });
   } catch (error) {
@@ -92,6 +111,18 @@ async function main() {
   const { values, positionals } = parsed;
   const [command, target, ...extra] = positionals;
   currentCommand = command ?? null;
+  if (values.skill) {
+    currentCommand = "skill";
+    if (positionals.length) {
+      throw new GitwtError("invalid_arguments", "Используйте --skill без команды");
+    }
+    process.stdout.write(
+      machine
+        ? `${JSON.stringify({ ok: true, command: "skill", data: { prompt: skill } })}\n`
+        : `${skill}\n`,
+    );
+    return;
+  }
   if (!command || values.help) {
     if (machine) {
       process.stdout.write(`${JSON.stringify({ ok: true, command: "help", data: { usage } })}\n`);

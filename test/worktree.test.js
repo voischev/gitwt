@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -406,6 +406,37 @@ test("CLI нормализует ошибки аргументов в machine en
   const missingEnvelope = JSON.parse(missing.stderr);
   assert.equal(missingEnvelope.command, "add");
   assert.equal(missingEnvelope.error.code, "missing_argument");
+});
+
+test("--skill печатает инструкцию вне Git без команд, чтения конфигов и записи файлов", async (t) => {
+  const parent = path.join(os.tmpdir(), "gitwt");
+  await mkdir(parent, { recursive: true });
+  const root = await mkdtemp(path.join(parent, "skill-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, ".gitwt.json"), "{invalid");
+  const env = { ...process.env, HOME: root, PATH: "" };
+  const before = await readdir(root);
+  const text = cli(["--skill"], root, env);
+  assert.equal(text.status, 0);
+  assert.equal(text.stderr, "");
+  assert.match(text.stdout, /^# Git worktrees with gitwt\n/);
+  assert.match(text.stdout, /gitwt add <branch> --base <remote-branch> --json/);
+  assert.match(text.stdout, /data\.worktreePath/);
+  for (const mode of ["--json", "--porcelain"]) {
+    const output = cli(["--skill", mode], root, env);
+    assert.equal(output.status, 0);
+    assert.equal(output.stderr, "");
+    assert.deepEqual(JSON.parse(output.stdout), {
+      ok: true,
+      command: "skill",
+      data: { prompt: text.stdout.trimEnd() },
+    });
+  }
+  const mixed = cli(["add", "task", "--skill", "--json"], root, env);
+  assert.equal(mixed.status, 1);
+  assert.equal(mixed.stdout, "");
+  assert.equal(JSON.parse(mixed.stderr).error.code, "invalid_arguments");
+  assert.deepEqual(await readdir(root), before);
 });
 
 test("listWorktrees отдаёт null для live-статуса без проверки и false для чистого", async (t) => {
